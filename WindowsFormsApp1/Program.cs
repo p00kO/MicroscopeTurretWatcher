@@ -5,7 +5,6 @@ using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using Microsoft.Diagnostics.Tracing.Session;
 using System.IO.Ports;
-using System.Xml;
 using System.Drawing;
 using System.Data;
 
@@ -15,28 +14,17 @@ namespace WindowsFormsApp1
     {
         static String turretState;
         static Mutex turretStateMutex;
-        static DataSet calibrationData; // Conversion table from ID to Relay/Object values
 
         [STAThread]
         static void Main(string [] args)
-            // -> ToDo: need to receive PID for Microscope application from PS launch script
-        {           
+        // -> ToDo: need to receive PID for Microscope application from PS launch script
+        {
             // Check that we're admin:
             if (!(TraceEventSession.IsElevated() ?? false))
             {
                 MessageBox.Show("Please run as an Administrator....");
                 return;
-            }
-
-            // Setup calibration data object: --> TODO Will need to sync up when data is updated...
-            calibrationData =  new DataSet();
-            calibrationData.ReadXml("C:\\Users\\P00ko\\Desktop\\PROJECTS\\Microscope\\turretParameters.xml");            
-            
-            // Watch Turret...
-            turretStateMutex = new Mutex();
-            Turret turret = new Turret();
-            Thread turretWatcher = new Thread(new ThreadStart(turret.watch));
-            turretWatcher.Start();
+            }            
 
             // Start Watching process
             Thread watchProcess = new Thread(new ThreadStart(ProcessWatcher.starto));
@@ -45,23 +33,32 @@ namespace WindowsFormsApp1
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
+            // Watch Turret...
+            turretStateMutex = new Mutex();
+            Turret turret = new Turret();
+            Thread turretWatcher = new Thread(new ThreadStart(turret.watch));
+            turretWatcher.Start();
+
             //Set up the form
             Form1 f = new Form1();
             turret.TurretChanged += f.OnTurretChanged;
-            Application.Run(f);
+            Application.Run(f);            
         }
         public static String getTurretState()
         {
+            
             if (turretStateMutex.WaitOne(4000)) // wait at most 4 seconds for mutex
             {
+                String locTState = null;
                 try
                 {
-                    return turretState;
+                    locTState = turretState;
                 }
                 finally
-                {
+                {                  
                     turretStateMutex.ReleaseMutex();                    
                 }
+                return locTState;
             }
             else
             {
@@ -89,7 +86,6 @@ namespace WindowsFormsApp1
         }
     }
 }
-
 class Turret
 {
     public delegate void TurretChangedEventHandler(object source, TurretChangedEventArgs args);
@@ -98,7 +94,8 @@ class Turret
     bool portFound;
 
     public void watch()
-    {  
+    {
+        Thread.Sleep(1000); // Allow main thread to build GUI
         SetComPort();
         if (!portFound)
         {
@@ -111,11 +108,21 @@ class Turret
         {
             String newState = currentPort.ReadLine();
             if (!oldState.Equals(newState))
-            {                
-                OnTurretChanged(newState);                
+            {
+                if (newState.Contains("0")) newState = "0";
+                else if (newState.Contains("1")) newState = "1";
+                else if (newState.Contains("2")) newState = "2";
+                else if (newState.Contains("3")) newState = "3";
+                else if (newState.Contains("4")) newState = "4";
+                else if (newState.Contains("5")) newState = "5";
+                else if (newState.Contains("6")) newState = "6";
+                else if (newState.Contains("7")) newState = "7";
+                else continue;
+
                 oldState = newState;
                 WindowsFormsApp1.Program.setTurretState(newState);
-            }            
+                OnTurretChanged(newState); // getCalState assumes new State is set
+            }                        
         }
         // not needed but why not... 
         currentPort.Close();
@@ -178,8 +185,7 @@ class ProcessWatcher
                 Environment.Exit(0);
             }; 
             
-            kernelSession.EnableKernelProvider(/*KernelTraceEventParser.Keywords.Process | */
-                                               KernelTraceEventParser.Keywords.FileIO |
+            kernelSession.EnableKernelProvider(KernelTraceEventParser.Keywords.FileIO |
                                                KernelTraceEventParser.Keywords.FileIOInit |
                                                KernelTraceEventParser.Keywords.DiskFileIO);
 
@@ -198,9 +204,7 @@ class ProcessWatcher
         if (data.ProcessName == appName) 
         {
             if (data.FileName.Contains(fileExtension))
-            {
-                // ToDo --> need a filter to distinguish file write type of events + if same or not...
-
+            {   // ToDo --> need a filter to distinguish file write type of events + if same or not...
                 // 1) open reffered file get file date/time stamp
                 // 2) get nearest turret value to date/time stamp --> thread safe locked array
                 // 3) lookup pitch data from LUT and write to tif header
@@ -208,18 +212,40 @@ class ProcessWatcher
                 Console.WriteLine("Turret State : " + WindowsFormsApp1.Program.getTurretState());
                 Console.WriteLine("ProcessID : " + ID);
                 Console.WriteLine("Filename : " + data.FileName); // --> going to open file, add the data and close it
-                // FileIO.readTiffFile(data.FileName);
+                FileIO.addCalDataToTiffFile(data.FileName);
             }
         }
     }
 }
-
 class FileIO {
 
-    private const String filename = "C:\\Users\\P00ko\\Desktop\\PROJECTS\\Microscope\\turretParameters.xml"; // pass in....
-    public static void readTiffFile(string fName)
+    private const String calFile = "C:\\Users\\P00ko\\Desktop\\PROJECTS\\Microscope\\turretParameters.xml"; // Static refernce ? Instatnce variable? 
+    private static DataSet LUT;
+    private static FileIO fileIO;
+
+    private FileIO()
     {
-        string s = "HelloMama!";
+        initializeTurretObjectiveRelayLUT();
+    }
+
+    public static FileIO getInstance()
+    {
+        if(FileIO.fileIO == null)
+        {
+            return new FileIO();
+        }
+        else
+        {
+            return fileIO;
+        }
+    }
+
+    public static void addCalDataToTiffFile(string fName)
+    {
+        // Build string to write to file:
+        string tState = WindowsFormsApp1.Program.getTurretState();
+        string s = "Mommy!";
+
         char[] vs = s.ToCharArray();
         byte[] ba = new byte[vs.Length];
         for (int i = 0; i < ba.Length; i++)
@@ -233,18 +259,38 @@ class FileIO {
         for (int i = 0; i < items.Length; i++)
         {
             newImg.SetPropertyItem(items[i]);
-        }
-        
-        // Do I really need to create a new file ?? mabe just add it to the old one ?
+        }        
         System.Drawing.Imaging.PropertyItem item = img.PropertyItems[0];
         img.Dispose();
         item.Id = 6996;
         item.Len = vs.Length;
         item.Type = 2;
-        item.Value = ba;
-        
+        item.Value = ba;        
         newImg.SetPropertyItem(item);       
         newImg.Save(fName, System.Drawing.Imaging.ImageFormat.Tiff);
         newImg.Dispose();
     }
+
+
+    public static void initializeTurretObjectiveRelayLUT()
+    {
+        LUT = new DataSet(); // Tables[0] --> Microscope data, Tables[1] Objective/Relay - Pitch Combos (See .xml file)
+        LUT.ReadXml("C:\\Users\\P00ko\\Desktop\\PROJECTS\\Microscope\\turretParameters.xml");
+    }
+
+    public String[] getRelayObjective(String rO)
+    {
+        String[] data = { " ", " " };
+        DataTable tb = LUT.Tables[1];
+        foreach (DataRow dr in tb.Rows)
+        {
+            if (dr["ID"].ToString().Equals(rO))
+            {
+                data[0] = dr["Objective"].ToString();
+                data[1] = dr["Relay"].ToString();
+            }
+        }
+        return data;
+    }
+
 }

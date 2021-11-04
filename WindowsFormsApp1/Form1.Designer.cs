@@ -46,7 +46,6 @@ namespace WindowsFormsApp1
             this.label1.Size = new System.Drawing.Size(89, 24);
             this.label1.TabIndex = 0;
             this.label1.Text = "Objective";
-            this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
             // label2
             // 
@@ -77,7 +76,6 @@ namespace WindowsFormsApp1
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(129, 29);
             this.textBox2.TabIndex = 3;
-            this.textBox2.TextChanged += new System.EventHandler(this.textBox2_TextChanged);
             // 
             // button1
             // 
@@ -103,8 +101,7 @@ namespace WindowsFormsApp1
             this.Controls.Add(this.label1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
-            this.Text = "Lens Settings";
-            this.Load += new System.EventHandler(this.Form1_Load);
+            this.Text = "Lens Settings";            
             this.ResumeLayout(false);
             this.PerformLayout();
 

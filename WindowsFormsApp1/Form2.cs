@@ -14,8 +14,6 @@ namespace WindowsFormsApp1
     {
         private bool calibrationValueshanged = false;
         DataSet ds;
-        string calFile;
-
         public Form2()
         {
             InitializeComponent();
@@ -58,8 +56,9 @@ namespace WindowsFormsApp1
         }
         private void LoadXMLCalibrationFile()
         {
+            // Assumes a set xml file layout
             ds = new DataSet();
-            ds.ReadXml("C:\\Users\\P00ko\\Desktop\\PROJECTS\\Microscope\\turretParameters.xml");
+            ds.ReadXml(FileIO.getCurrentCalibrationXML());
             dataGridView1.DataSource = ds.Tables[1];
             textBox1.Text = ds.Tables[0].Rows[0]["MicroscopeInfo"].ToString();
             label3.Text = "Calibration data loaded from turretParameter.xml...";
@@ -67,11 +66,7 @@ namespace WindowsFormsApp1
         private void updateXMLCalibrationFile()
         {
             ds.Tables[0].Rows[0]["MicroscopeInfo"] = textBox1.Text;
-            // string newName = baseName + dateStamp;
-            // replace calFile with newName in config file
-            // 
-            ds.WriteXml("C:\\Users\\P00ko\\Desktop\\PROJECTS\\Microscope\\turretParameters.xml");           
-            FileIO.initializeTurretObjectiveRelayLUT();
+            FileIO.createNewTurretObjectiveRelayXML(ds); // Create new file...                         
             label3.Text = "Calibration data updated and saved to testytest.xml...";
         }
     }

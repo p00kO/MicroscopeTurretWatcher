@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.Threading;
+using System.IO;
 using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using Microsoft.Diagnostics.Tracing.Session;
@@ -218,13 +219,21 @@ class ProcessWatcher
     }
 }
 class FileIO {
-
-    private const String calFile = "C:\\Users\\P00ko\\Desktop\\PROJECTS\\Microscope\\turretParameters.xml"; // Static refernce ? Instatnce variable? 
+    // using config text file for now --> will move to registry when building installer...
+    private static String calPath = "C:\\Users\\P00ko\\Desktop\\PROJECTS\\Microscope\\";
+    private static String CONFIG = "turretWatcher.config";
+    private static String calSetName;
+    private static String currentCalFile;
     private static DataSet LUT;
     private static FileIO fileIO;
 
     private FileIO()
     {
+        // Instantiate from config file...
+        String configPath = calPath + CONFIG;
+        String[] lines = System.IO.File.ReadAllLines(configPath);
+        calSetName = lines[0];
+        currentCalFile = calPath + calSetName + ".xml";
         initializeTurretObjectiveRelayLUT();
     }
 
@@ -240,12 +249,11 @@ class FileIO {
         }
     }
 
-    public static void addCalDataToTiffFile(string fName)
+    public static void addCalDataToTiffFile(string fName) // Will be called over and over... --> Need to handle many calls
     {
         // Build string to write to file:
         string tState = WindowsFormsApp1.Program.getTurretState();
         string s = "Mommy!";
-
         char[] vs = s.ToCharArray();
         byte[] ba = new byte[vs.Length];
         for (int i = 0; i < ba.Length; i++)
@@ -271,11 +279,40 @@ class FileIO {
         newImg.Dispose();
     }
 
+    public static void createNewTurretObjectiveRelayXML(DataSet ds)
+    {
+        Console.WriteLine("Current date time: " + DateTimeOffset.Now.ToUnixTimeSeconds());
+        calSetName = "turretWatcher" + "_" + DateTimeOffset.Now.ToUnixTimeSeconds();
+        currentCalFile = calPath + calSetName + ".xml";
+        ds.WriteXml(currentCalFile);
+        updateConfigFile(calSetName);
+        initializeTurretObjectiveRelayLUT();
+    }
 
-    public static void initializeTurretObjectiveRelayLUT()
+    public static void updateConfigFile(String newSetName)
+    {
+        String configPath = calPath + CONFIG;
+        try
+        {            
+            StreamWriter sw = new StreamWriter(configPath);            
+            sw.WriteLine(newSetName);
+            sw.Close();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Exception: " + e.Message);
+        }        
+    }
+
+    public static string getCurrentCalibrationXML()
+    {
+        return currentCalFile;
+    }
+
+    private static void initializeTurretObjectiveRelayLUT()
     {
         LUT = new DataSet(); // Tables[0] --> Microscope data, Tables[1] Objective/Relay - Pitch Combos (See .xml file)
-        LUT.ReadXml("C:\\Users\\P00ko\\Desktop\\PROJECTS\\Microscope\\turretParameters.xml");
+        LUT.ReadXml(currentCalFile);
     }
 
     public String[] getRelayObjective(String rO)

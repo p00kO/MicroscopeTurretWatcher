@@ -226,6 +226,7 @@ class FileIO {
     private static String currentCalFile;
     private static DataSet LUT;
     private static FileIO fileIO;
+    private static bool WatcherMutex;
 
     private FileIO()
     {
@@ -235,13 +236,15 @@ class FileIO {
         calSetName = lines[0];
         currentCalFile = calPath + calSetName + ".xml";
         initializeTurretObjectiveRelayLUT();
+
     }
 
     public static FileIO getInstance()
     {
         if(FileIO.fileIO == null)
         {
-            return new FileIO();
+            FileIO.fileIO = new FileIO();
+            return fileIO;
         }
         else
         {
@@ -251,32 +254,58 @@ class FileIO {
 
     public static void addCalDataToTiffFile(string fName) // Will be called over and over... --> Need to handle many calls
     {
-        // Build string to write to file:
-        string tState = WindowsFormsApp1.Program.getTurretState();
-        string s = "Mommy!";
-        char[] vs = s.ToCharArray();
-        byte[] ba = new byte[vs.Length];
-        for (int i = 0; i < ba.Length; i++)
+        if (WatcherMutex) return;
+        WatcherMutex = true;
+        try
         {
-            ba[i] = Convert.ToByte(vs[i]);
+            fName = "C:\\Users\\P00ko\\Desktop\\RobotArm.tif";
+            Image img = Image.FromFile(fName);
+            Image newImg = new Bitmap(img);
+            System.Drawing.Imaging.PropertyItem[] items = img.PropertyItems;
+            
+            // Check that file hasn't already been stamped:
+            bool hasValue = false;
+            foreach (System.Drawing.Imaging.PropertyItem item in items)
+            {
+                if (item.Id == 6996) hasValue = true;
+            }
+
+            // If not, add stamp:
+            if (!hasValue)
+            {
+            // Build string to write to file:
+                string[] data = fileIO.getCalibration(WindowsFormsApp1.Program.getTurretState());
+                string s = "\n[Calibration]\n" +
+                           "Objective = " + data[0] + "\n" +
+                           "Relay = " + data[1] + "\n" +
+                           "PixelPitch = " + data[2] + "\n\n" +
+                           LUT.Tables[0].Rows[0]["MicroscopeInfo"].ToString() + "\n";
+                char[] vs = s.ToCharArray();
+                byte[] ba = new byte[vs.Length];
+                for (int i = 0; i < ba.Length; i++)
+                {
+                    ba[i] = Convert.ToByte(vs[i]);
+                }
+                for (int i = 0; i < items.Length; i++)
+                {
+                    newImg.SetPropertyItem(items[i]);
+                }
+                System.Drawing.Imaging.PropertyItem item = img.PropertyItems[0];
+                img.Dispose();
+                item.Id = 6996;
+                item.Len = vs.Length;
+                item.Type = 2;
+                item.Value = ba;
+                newImg.SetPropertyItem(item);
+                newImg.Save(fName, System.Drawing.Imaging.ImageFormat.Tiff);
+            }
+            newImg.Dispose();            
         }
-        
-        Image img = Image.FromFile(fName);
-        Image newImg = new Bitmap(img);
-        System.Drawing.Imaging.PropertyItem [] items = img.PropertyItems;
-        for (int i = 0; i < items.Length; i++)
+        finally
         {
-            newImg.SetPropertyItem(items[i]);
-        }        
-        System.Drawing.Imaging.PropertyItem item = img.PropertyItems[0];
-        img.Dispose();
-        item.Id = 6996;
-        item.Len = vs.Length;
-        item.Type = 2;
-        item.Value = ba;        
-        newImg.SetPropertyItem(item);       
-        newImg.Save(fName, System.Drawing.Imaging.ImageFormat.Tiff);
-        newImg.Dispose();
+            WatcherMutex = false;
+        }
+
     }
 
     public static void createNewTurretObjectiveRelayXML(DataSet ds)
@@ -325,6 +354,21 @@ class FileIO {
             {
                 data[0] = dr["Objective"].ToString();
                 data[1] = dr["Relay"].ToString();
+            }
+        }
+        return data;
+    }
+    public String[] getCalibration(String rO)
+    {
+        String[] data = { " ", " " , " " };
+        DataTable tb = LUT.Tables[1];
+        foreach (DataRow dr in tb.Rows)
+        {
+            if (dr["ID"].ToString().Equals(rO))
+            {
+                data[0] = dr["Objective"].ToString();
+                data[1] = dr["Relay"].ToString();
+                data[2] = dr["Pitch"].ToString();
             }
         }
         return data;

@@ -22,8 +22,11 @@ namespace WindowsFormsApp1
         }
         private void button1_Click(object sender, EventArgs e)
         {
-            updateXMLCalibrationFile();
-            calibrationValueshanged = false;
+            if (calibrationValueshanged)
+            {
+                updateXMLCalibrationFile();
+                calibrationValueshanged = false;
+            }
         }
         private void button2_Click(object sender, EventArgs e)
         {

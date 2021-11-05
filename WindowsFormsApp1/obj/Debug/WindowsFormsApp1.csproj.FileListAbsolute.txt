@@ -1,7 +1,3 @@
-C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.csprojAssemblyReference.cache
-C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.Properties.Resources.resources
-C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.csproj.GenerateResource.cache
-C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.csproj.CoreCompileInputs.cache
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\OSExtensions.dll
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\x86\KernelTraceControl.dll
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\x86\KernelTraceControl.Win61.dll
@@ -24,8 +20,12 @@ C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\System.R
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\Microsoft.Diagnostics.FastSerialization.xml
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\Microsoft.Diagnostics.Tracing.TraceEvent.xml
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\System.Runtime.CompilerServices.Unsafe.xml
+C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.Form1.resources
+C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.Form2.resources
+C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.Properties.Resources.resources
+C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.csproj.GenerateResource.cache
+C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.csproj.CoreCompileInputs.cache
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.csproj.CopyComplete
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.exe
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.pdb
-C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.Form1.resources
-C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.Form2.resources
+C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.csprojAssemblyReference.cache

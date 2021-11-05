@@ -170,9 +170,9 @@ public class TurretChangedEventArgs : EventArgs
 class ProcessWatcher
 {
     // will be changed to PID passed from PS script
-    static string appName = "notepad";
+    //static string appName = "notepad";
     static string ID;
-    static string fileExtension = ".txt"; // change to .tif
+    static string fileExtension = ".tif"; // change to .tif
     static int counter = 0;
     static String lastFileName = "  ";
     public static void starto()
@@ -202,14 +202,10 @@ class ProcessWatcher
     private static void fileCreate(FileIOInfoTraceData data)
     {
         //if(data.ProcessID == Int32.Parse(ID)) // set as passed PID from PowerShell
-        if (data.ProcessName == appName) 
+        if (data.ProcessID.ToString().Equals(ID) )
         {
             if (data.FileName.Contains(fileExtension))
-            {   // ToDo --> need a filter to distinguish file write type of events + if same or not...
-                // 1) open reffered file get file date/time stamp
-                // 2) get nearest turret value to date/time stamp --> thread safe locked array
-                // 3) lookup pitch data from LUT and write to tif header
-                // 4) close file
+            {
                 Console.WriteLine("Turret State : " + WindowsFormsApp1.Program.getTurretState());
                 Console.WriteLine("ProcessID : " + ID);
                 Console.WriteLine("Filename : " + data.FileName); // --> going to open file, add the data and close it
@@ -258,7 +254,7 @@ class FileIO {
         WatcherMutex = true;
         try
         {
-            fName = "C:\\Users\\P00ko\\Desktop\\RobotArm.tif";
+                        
             Image img = Image.FromFile(fName);
             Image newImg = new Bitmap(img);
             System.Drawing.Imaging.PropertyItem[] items = img.PropertyItems;
@@ -273,7 +269,7 @@ class FileIO {
             // If not, add stamp:
             if (!hasValue)
             {
-            // Build string to write to file:
+                // Build string to write to file:
                 string[] data = fileIO.getCalibration(WindowsFormsApp1.Program.getTurretState());
                 string s = "\n[Calibration]\n" +
                            "Objective = " + data[0] + "\n" +
@@ -309,11 +305,18 @@ class FileIO {
     }
 
     public static void createNewTurretObjectiveRelayXML(DataSet ds)
-    {
-        Console.WriteLine("Current date time: " + DateTimeOffset.Now.ToUnixTimeSeconds());
+    {        
         calSetName = "turretWatcher" + "_" + DateTimeOffset.Now.ToUnixTimeSeconds();
         currentCalFile = calPath + calSetName + ".xml";
-        ds.WriteXml(currentCalFile);
+        try
+        {
+            ds.WriteXml(currentCalFile);
+        }
+        catch(Exception e)
+        {
+            MessageBox.Show("Couldn't write to the new .xml file. \n Exception :" + e.Message);
+            Environment.Exit(0);
+        }
         updateConfigFile(calSetName);
         initializeTurretObjectiveRelayLUT();
     }
@@ -329,7 +332,8 @@ class FileIO {
         }
         catch (Exception e)
         {
-            Console.WriteLine("Exception: " + e.Message);
+            MessageBox.Show("Couldn't read the turretWatcher.config file. \n Exception: " + e.Message);
+            Environment.Exit(0);
         }        
     }
 
@@ -341,7 +345,18 @@ class FileIO {
     private static void initializeTurretObjectiveRelayLUT()
     {
         LUT = new DataSet(); // Tables[0] --> Microscope data, Tables[1] Objective/Relay - Pitch Combos (See .xml file)
-        LUT.ReadXml(currentCalFile);
+        try
+        {
+            LUT.ReadXml(currentCalFile);
+        }
+        catch(FileNotFoundException e)
+        {
+            MessageBox.Show("Something went wrong reading the XML calibration file. You can: " +
+                            "\n 1) Check that the turretWatcher.config file is refering to an \n   existing .xml file" +
+                            "\n 2) Verify that the .xml file is correctly structured");
+            Environment.Exit(0);
+        }
+        
     }
 
     public String[] getRelayObjective(String rO)

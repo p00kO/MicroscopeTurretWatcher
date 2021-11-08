@@ -17,6 +17,7 @@ namespace WindowsFormsApp1
         {
             InitializeComponent();
             this.fileIO = FileIO.getInstance();
+
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -25,6 +26,10 @@ namespace WindowsFormsApp1
             f.Show();            
         }
 
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+           e.Cancel = true;            
+        }       
         public void OnTurretChanged(object source, TurretChangedEventArgs e)
         {
             String [] state = fileIO.getRelayObjective(e.value); // returns [0] Objective and [1] Relay

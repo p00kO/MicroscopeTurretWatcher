@@ -23,13 +23,10 @@ $micApp= Start-Process "C:\Program Files\AmScope\AmScope\x64\amscope.exe" -PassT
 
 # Restore the Key
 Get-Item -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options' | New-Item -Name 'amscope.exe' -Force
-New-ItemProperty -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\amscope.exe' -Name 'Debugger' -Value "C:\USERS\P00KO\DESKTOP\PROJECTS\Microscope\test1.bat" -PropertyType String -Force
+New-ItemProperty -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\amscope.exe' -Name 'Debugger' -Value "C:\Users\P00ko\source\repos\WindowsFormsApp1\test1.bat" -PropertyType String -Force
 
-# 3) start the client microscope watcher
-$ID=$micApp.Id;
+$ID=$micApp.Id
 $client = Start-Process "C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\bin\Release\WindowsFormsApp1.exe" -ArgumentList "$ID" -PassThru
 
-#4) Wait for server app to die -> Anything else dies, server is notified!:  
 $micApp.WaitForExit()
 Stop-Process($client.Id)
-    

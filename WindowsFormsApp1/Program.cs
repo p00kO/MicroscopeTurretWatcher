@@ -7,7 +7,9 @@ using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using Microsoft.Diagnostics.Tracing.Session;
 using System.IO.Ports;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Data;
+
 
 namespace WindowsFormsApp1
 {
@@ -41,9 +43,10 @@ namespace WindowsFormsApp1
             turretWatcher.Start();
 
             //Set up the form
-            Form1 f = new Form1();
+            Form1 f = new Form1();            
             turret.TurretChanged += f.OnTurretChanged;
-            Application.Run(f);            
+
+            Application.Run(f);
         }
         public static String getTurretState()
         {
@@ -62,8 +65,7 @@ namespace WindowsFormsApp1
                 return locTState;
             }
             else
-            {
-                Console.WriteLine("Couldn't return the turretState... ");
+            {                
                 return null;
             }
         }
@@ -79,11 +81,7 @@ namespace WindowsFormsApp1
                 {
                     turretStateMutex.ReleaseMutex();
                 }
-            }
-            else
-            {
-                Console.WriteLine("Couldn't update turretState! ");
-            }
+            }            
         }
     }
 }
@@ -101,29 +99,39 @@ class Turret
         if (!portFound)
         {
             MessageBox.Show("There's a problem with your detector connection. Please check and try again");
+            ProcessWatcher.killCameraApp();
             System.Environment.Exit(0);
         }        
         currentPort.Open();
         String oldState ="  ";
         while (true)
         {
-            String newState = currentPort.ReadLine();
-            if (!oldState.Equals(newState))
+            try
             {
-                if (newState.Contains("0")) newState = "0";
-                else if (newState.Contains("1")) newState = "1";
-                else if (newState.Contains("2")) newState = "2";
-                else if (newState.Contains("3")) newState = "3";
-                else if (newState.Contains("4")) newState = "4";
-                else if (newState.Contains("5")) newState = "5";
-                else if (newState.Contains("6")) newState = "6";
-                else if (newState.Contains("7")) newState = "7";
-                else continue;
+                String newState = currentPort.ReadLine();
+                if (!oldState.Equals(newState))
+                {
+                    if (newState.Contains("0")) newState = "0";
+                    else if (newState.Contains("1")) newState = "1";
+                    else if (newState.Contains("2")) newState = "2";
+                    else if (newState.Contains("3")) newState = "3";
+                    else if (newState.Contains("4")) newState = "4";
+                    else if (newState.Contains("5")) newState = "5";
+                    else if (newState.Contains("6")) newState = "6";
+                    else if (newState.Contains("7")) newState = "7";
+                    else continue;
 
-                oldState = newState;
-                WindowsFormsApp1.Program.setTurretState(newState);
-                OnTurretChanged(newState); // getCalState assumes new State is set
-            }                        
+                    oldState = newState;
+                    WindowsFormsApp1.Program.setTurretState(newState);
+                    OnTurretChanged(newState); // getCalState assumes new State is set
+                }
+            }
+            catch(Exception e)
+            {
+                MessageBox.Show("There's a problem with your detector connection. Please check and try again \n" + e.Message);
+                ProcessWatcher.killCameraApp();
+                System.Environment.Exit(0);
+            }
         }
         // not needed but why not... 
         currentPort.Close();
@@ -145,7 +153,13 @@ class Turret
             string[] ports = SerialPort.GetPortNames();                        
             if(ports.Length > 1)
             {
-                MessageBox.Show("There's too many serial devices. I've become confused");
+                String s ="";
+                for(int i=0; i<ports.Length; i++)
+                {
+                    s += ports[i] + "  " ;
+                }
+                MessageBox.Show("There's too many serial devices. I've become confused \n" + s);
+                ProcessWatcher.killCameraApp();
                 System.Environment.Exit(0);
                 portFound = false;
             }
@@ -155,6 +169,7 @@ class Turret
         catch (Exception e)
         {
             MessageBox.Show("There's a problem with your detector. Please check connection or get help from service group! ;-) ");
+            ProcessWatcher.killCameraApp();
             System.Environment.Exit(0); 
         }
     }
@@ -172,9 +187,7 @@ class ProcessWatcher
     // will be changed to PID passed from PS script
     //static string appName = "notepad";
     static string ID;
-    static string fileExtension = ".tif"; // change to .tif
-    static int counter = 0;
-    static String lastFileName = "  ";
+    static string fileExtension = ".tif"; // change to .tif    
     public static void starto()
     {
         using (var kernelSession = new TraceEventSession("test"))
@@ -195,6 +208,11 @@ class ProcessWatcher
             kernelSession.Source.Process();
         }
     }
+
+    public static void killCameraApp()
+    {
+        KillProcessAndChildren(Int32.Parse(ID));
+    }
     public static void setProcessId(String pID)
     {
         ProcessWatcher.ID = pID;
@@ -211,6 +229,33 @@ class ProcessWatcher
                 Console.WriteLine("Filename : " + data.FileName); // --> going to open file, add the data and close it
                 FileIO.addCalDataToTiffFile(data.FileName);
             }
+        }
+    }
+
+    private static void KillProcessAndChildren(int pid)
+    {
+        // Cannot close 'system idle process'.
+        if (pid == 0)
+        {
+            return;
+        }
+        Console.WriteLine("Trying to close: " + pid);
+        System.Management.ManagementObjectSearcher searcher = new System.Management.ManagementObjectSearcher
+                ("Select * From Win32_Process Where ParentProcessID=" + pid);
+        System.Management.ManagementObjectCollection moc = searcher.Get();
+        foreach (System.Management.ManagementObject mo in moc)
+        {
+            KillProcessAndChildren(Convert.ToInt32(mo["ProcessID"]));
+        }
+        try
+        {
+            Console.WriteLine("Kill step....");
+            System.Diagnostics.Process proc = System.Diagnostics.Process.GetProcessById(pid);
+            proc.Kill();
+        }
+        catch (ArgumentException)
+        {
+            // Process already exited.
         }
     }
 }
@@ -232,7 +277,6 @@ class FileIO {
         calSetName = lines[0];
         currentCalFile = calPath + calSetName + ".xml";
         initializeTurretObjectiveRelayLUT();
-
     }
 
     public static FileIO getInstance()
@@ -253,8 +297,7 @@ class FileIO {
         if (WatcherMutex) return;
         WatcherMutex = true;
         try
-        {
-                        
+        {                        
             Image img = Image.FromFile(fName);
             Image newImg = new Bitmap(img);
             System.Drawing.Imaging.PropertyItem[] items = img.PropertyItems;
@@ -265,8 +308,7 @@ class FileIO {
             {
                 if (item.Id == 6996) hasValue = true;
             }
-
-            // If not, add stamp:
+            // ...if not, add stamp:
             if (!hasValue)
             {
                 // Build string to write to file:
@@ -282,18 +324,40 @@ class FileIO {
                 {
                     ba[i] = Convert.ToByte(vs[i]);
                 }
+                // Copy over tags from original image:
                 for (int i = 0; i < items.Length; i++)
                 {
                     newImg.SetPropertyItem(items[i]);
                 }
+
+                // Generate a 24bit RGB image with no compression:
+                ImageCodecInfo myImageCodecInfo;
+                Encoder myEncoder;
+                Encoder myEncoderCol;
+                EncoderParameter myEncoderParameter;
+                EncoderParameters myEncoderParameters;
+                myImageCodecInfo = GetEncoderInfo("image/tiff");
+                myEncoder = Encoder.Compression;
+                myEncoderCol = Encoder.ColorDepth;
+                myEncoderParameters = new EncoderParameters(2);
+                myEncoderParameter = new EncoderParameter(
+                                    myEncoder,
+                                    (long)EncoderValue.CompressionNone);
+                myEncoderParameters.Param[0] = myEncoderParameter;
+                myEncoderParameter = new EncoderParameter(myEncoderCol, 24L);
+                myEncoderParameters.Param[1] = myEncoderParameter;
+
+                // Build metadata for the image:
                 System.Drawing.Imaging.PropertyItem item = img.PropertyItems[0];
                 img.Dispose();
                 item.Id = 6996;
                 item.Len = vs.Length;
                 item.Type = 2;
                 item.Value = ba;
-                newImg.SetPropertyItem(item);
-                newImg.Save(fName, System.Drawing.Imaging.ImageFormat.Tiff);
+                newImg.SetPropertyItem(item);   
+                
+                //Save image:
+                newImg.Save(fName, myImageCodecInfo, myEncoderParameters);
             }
             newImg.Dispose();            
         }
@@ -303,7 +367,18 @@ class FileIO {
         }
 
     }
-
+    private static ImageCodecInfo GetEncoderInfo(String mimeType)
+    {
+        int j;
+        ImageCodecInfo[] encoders;
+        encoders = ImageCodecInfo.GetImageEncoders();
+        for (j = 0; j < encoders.Length; ++j)
+        {
+            if (encoders[j].MimeType == mimeType)
+                return encoders[j];
+        }
+        return null;
+    }
     public static void createNewTurretObjectiveRelayXML(DataSet ds)
     {        
         calSetName = "turretWatcher" + "_" + DateTimeOffset.Now.ToUnixTimeSeconds();
@@ -315,6 +390,7 @@ class FileIO {
         catch(Exception e)
         {
             MessageBox.Show("Couldn't write to the new .xml file. \n Exception :" + e.Message);
+            ProcessWatcher.killCameraApp();
             Environment.Exit(0);
         }
         updateConfigFile(calSetName);
@@ -333,6 +409,7 @@ class FileIO {
         catch (Exception e)
         {
             MessageBox.Show("Couldn't read the turretWatcher.config file. \n Exception: " + e.Message);
+            ProcessWatcher.killCameraApp();
             Environment.Exit(0);
         }        
     }
@@ -354,6 +431,7 @@ class FileIO {
             MessageBox.Show("Something went wrong reading the XML calibration file. You can: " +
                             "\n 1) Check that the turretWatcher.config file is refering to an \n   existing .xml file" +
                             "\n 2) Verify that the .xml file is correctly structured");
+            ProcessWatcher.killCameraApp();
             Environment.Exit(0);
         }
         

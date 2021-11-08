@@ -101,10 +101,11 @@ namespace WindowsFormsApp1
             this.Controls.Add(this.label1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
-            this.Text = "Lens Settings";            
+            this.Text = "Lens Settings";
+            this.TopMost = true;
             this.ResumeLayout(false);
             this.PerformLayout();
-
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
         }
 
         #endregion

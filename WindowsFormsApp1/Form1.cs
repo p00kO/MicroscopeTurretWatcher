@@ -32,7 +32,7 @@ namespace WindowsFormsApp1
         }       
         public void OnTurretChanged(object source, TurretChangedEventArgs e)
         {
-            String [] state = fileIO.getRelayObjective(e.value); // returns [0] Objective and [1] Relay
+            String [] state = fileIO.getCalibration(e.value); // returns [0] Objective and [1] Relay
             textBox1.Invoke((MethodInvoker)delegate
             {
                 if(e.value != null) textBox1.Text = state[0];

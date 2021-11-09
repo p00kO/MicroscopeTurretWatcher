@@ -9,7 +9,7 @@ using System.IO.Ports;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Data;
-
+using System.Reflection;
 
 namespace WindowsFormsApp1
 {
@@ -28,7 +28,6 @@ namespace WindowsFormsApp1
                 MessageBox.Show("Please run as an Administrator....");
                 return;
             }            
-
             // Start Watching process
             Thread watchProcess = new Thread(new ThreadStart(ProcessWatcher.starto));
             watchProcess.Start();
@@ -141,8 +140,7 @@ class Turret
     {
         if(TurretChanged != null)
         {            
-            TurretChanged(this, new TurretChangedEventArgs(value)); // GUI update            
-            // add to a list with time stamp.... -> for checking by process thread...
+            TurretChanged(this, new TurretChangedEventArgs(value)); // GUI update
         }
     }
 
@@ -184,8 +182,6 @@ public class TurretChangedEventArgs : EventArgs
 }
 class ProcessWatcher
 {
-    // will be changed to PID passed from PS script
-    //static string appName = "notepad";
     static string ID;
     static string fileExtension = ".tif"; // change to .tif    
     public static void starto()
@@ -219,14 +215,10 @@ class ProcessWatcher
     }
     private static void fileCreate(FileIOInfoTraceData data)
     {
-        //if(data.ProcessID == Int32.Parse(ID)) // set as passed PID from PowerShell
         if (data.ProcessID.ToString().Equals(ID) )
         {
             if (data.FileName.Contains(fileExtension))
             {
-                Console.WriteLine("Turret State : " + WindowsFormsApp1.Program.getTurretState());
-                Console.WriteLine("ProcessID : " + ID);
-                Console.WriteLine("Filename : " + data.FileName); // --> going to open file, add the data and close it
                 FileIO.addCalDataToTiffFile(data.FileName);
             }
         }
@@ -248,8 +240,7 @@ class ProcessWatcher
             KillProcessAndChildren(Convert.ToInt32(mo["ProcessID"]));
         }
         try
-        {
-            Console.WriteLine("Kill step....");
+        {            
             System.Diagnostics.Process proc = System.Diagnostics.Process.GetProcessById(pid);
             proc.Kill();
         }
@@ -259,9 +250,11 @@ class ProcessWatcher
         }
     }
 }
-class FileIO {
+class FileIO
+{
     // using config text file for now --> will move to registry when building installer...
-    private static String calPath = "C:\\Users\\P00ko\\Desktop\\PROJECTS\\Microscope\\";
+    //private static String calPath = "C:\\Users\\P00ko\\source\\repos\\WindowsFormsApp1\\";
+    private static String calPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "\\";
     private static String CONFIG = "turretWatcher.config";
     private static String calSetName;
     private static String currentCalFile;
@@ -365,7 +358,6 @@ class FileIO {
         {
             WatcherMutex = false;
         }
-
     }
     private static ImageCodecInfo GetEncoderInfo(String mimeType)
     {
@@ -436,21 +428,6 @@ class FileIO {
         }
         
     }
-
-    public String[] getRelayObjective(String rO)
-    {
-        String[] data = { " ", " " };
-        DataTable tb = LUT.Tables[1];
-        foreach (DataRow dr in tb.Rows)
-        {
-            if (dr["ID"].ToString().Equals(rO))
-            {
-                data[0] = dr["Objective"].ToString();
-                data[1] = dr["Relay"].ToString();
-            }
-        }
-        return data;
-    }
     public String[] getCalibration(String rO)
     {
         String[] data = { " ", " " , " " };
@@ -466,5 +443,4 @@ class FileIO {
         }
         return data;
     }
-
 }

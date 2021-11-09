@@ -20,7 +20,6 @@ C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\bin\Release\System
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\bin\Release\Microsoft.Diagnostics.FastSerialization.xml
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\bin\Release\Microsoft.Diagnostics.Tracing.TraceEvent.xml
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\bin\Release\System.Runtime.CompilerServices.Unsafe.xml
-C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Release\WindowsFormsApp1.csprojAssemblyReference.cache
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Release\WindowsFormsApp1.Form1.resources
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Release\WindowsFormsApp1.Form2.resources
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Release\WindowsFormsApp1.Properties.Resources.resources

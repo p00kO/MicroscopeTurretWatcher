@@ -285,10 +285,42 @@ class FileIO
         }
     }
 
+    private static bool isFileLocked(string FileName)
+    {
+        FileStream fs = null;
+        try
+        {
+            fs = File.Open(FileName, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        }
+        catch (UnauthorizedAccessException) // https://msdn.microsoft.com/en-us/library/y973b725(v=vs.110).aspx
+        {            
+            try
+            {
+                fs = File.Open(FileName, FileMode.Open, FileAccess.Read, FileShare.None);
+            }
+            catch (Exception)
+            {
+                return true; // This file has been locked, we can't even open it to read
+            }
+        }
+        catch (Exception)
+        {
+            return true; // This file has been locked
+        }
+        finally
+        {
+            if (fs != null)
+                fs.Close();
+        }
+        return false;
+    }
+
+
     public static void addCalDataToTiffFile(string fName) // Will be called over and over... --> Need to handle many calls
     {
         if (WatcherMutex) return;
         WatcherMutex = true;
+        if (isFileLocked(fName)) return;
         try
         {                        
             Image img = Image.FromFile(fName);

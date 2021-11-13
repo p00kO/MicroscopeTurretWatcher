@@ -17,7 +17,13 @@ namespace WindowsFormsApp1
         {
             InitializeComponent();
             this.fileIO = FileIO.getInstance();
-
+            //Open in bottom left corner
+            const int margin = 10;
+            int x = Screen.PrimaryScreen.WorkingArea.Left +
+                 margin;
+            int y = Screen.PrimaryScreen.WorkingArea.Bottom -
+                this.Height - margin;
+            this.Location = new Point(x, y);
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -29,7 +35,8 @@ namespace WindowsFormsApp1
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
            e.Cancel = true;            
-        }       
+        }
+
         public void OnTurretChanged(object source, TurretChangedEventArgs e)
         {
             String [] state = fileIO.getCalibration(e.value); // returns [0] Objective and [1] Relay

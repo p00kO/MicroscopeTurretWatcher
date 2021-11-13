@@ -28,3 +28,4 @@ C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Release\Window
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Release\WindowsFormsApp1.csproj.CopyComplete
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Release\WindowsFormsApp1.exe
 C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Release\WindowsFormsApp1.pdb
+C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\obj\Release\WindowsFormsApp1.csprojAssemblyReference.cache

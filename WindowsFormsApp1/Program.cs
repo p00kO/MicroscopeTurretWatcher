@@ -10,6 +10,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Data;
 using System.Reflection;
+using System.Management;
 
 namespace WindowsFormsApp1
 {
@@ -56,10 +57,10 @@ namespace WindowsFormsApp1
                 try
                 {
                     locTState = turretState;
-                }
+                }                
                 finally
-                {                  
-                    turretStateMutex.ReleaseMutex();                    
+                {
+                    turretStateMutex.ReleaseMutex();
                 }
                 return locTState;
             }
@@ -148,21 +149,41 @@ class Turret
     {
         try
         {
-            string[] ports = SerialPort.GetPortNames();                        
-            if(ports.Length > 1)
+            string[] ports = SerialPort.GetPortNames();
+            if (ports.Length == 1)
             {
-                String s ="";
-                for(int i=0; i<ports.Length; i++)
-                {
-                    s += ports[i] + "  " ;
-                }
-                MessageBox.Show("There's too many serial devices. I've become confused \n" + s);
-                ProcessWatcher.killCameraApp();
-                System.Environment.Exit(0);
-                portFound = false;
+                currentPort = new SerialPort(ports[0], 9600);
+                portFound = true;
             }
-            currentPort = new SerialPort(ports[0], 9600);
-            portFound = true;
+            else if (ports.Length > 1)
+            {
+                String pId = "2341";
+                String vId = "0043";
+                ManagementObjectSearcher searcher =
+                new ManagementObjectSearcher(@"\\localhost\root\CIMV2", "SELECT * FROM Win32_PnPEntity WHERE ConfigManagerErrorCode = 0");
+                foreach (ManagementObject queryObj in searcher.Get())
+                {
+                    String s = queryObj["DeviceID"].ToString();
+                    if (s.Contains(pId) && s.Contains(vId))
+                    {
+                        for (int i = 0; i < ports.Length; i++)
+                        {
+                            if (queryObj["Name"].ToString().Contains(ports[i]))
+                            {
+                                currentPort = new SerialPort(ports[i], 9600);
+                                portFound = true;
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show(" Sorry, I couldn't find the turret watched port.\n");
+                portFound = false;
+                ProcessWatcher.killCameraApp();
+                System.Environment.Exit(0);                
+            }
         }
         catch (Exception e)
         {
@@ -204,7 +225,6 @@ class ProcessWatcher
             kernelSession.Source.Process();
         }
     }
-
     public static void killCameraApp()
     {
         KillProcessAndChildren(Int32.Parse(ID));
@@ -223,7 +243,6 @@ class ProcessWatcher
             }
         }
     }
-
     private static void KillProcessAndChildren(int pid)
     {
         // Cannot close 'system idle process'.
@@ -253,7 +272,6 @@ class ProcessWatcher
 class FileIO
 {
     // using config text file for now --> will move to registry when building installer...
-    //private static String calPath = "C:\\Users\\P00ko\\source\\repos\\WindowsFormsApp1\\";
     private static String calPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "\\";
     private static String CONFIG = "turretWatcher.config";
     private static String calSetName;
@@ -261,7 +279,6 @@ class FileIO
     private static DataSet LUT;
     private static FileIO fileIO;
     private static bool WatcherMutex;
-
     private FileIO()
     {
         // Instantiate from config file...
@@ -271,7 +288,6 @@ class FileIO
         currentCalFile = calPath + calSetName + ".xml";
         initializeTurretObjectiveRelayLUT();
     }
-
     public static FileIO getInstance()
     {
         if(FileIO.fileIO == null)
@@ -284,7 +300,6 @@ class FileIO
             return fileIO;
         }
     }
-
     private static bool isFileLocked(string FileName)
     {
         FileStream fs = null;
@@ -314,13 +329,11 @@ class FileIO
         }
         return false;
     }
-
-
     public static void addCalDataToTiffFile(string fName) // Will be called over and over... --> Need to handle many calls
     {
-        if (WatcherMutex) return;
-        WatcherMutex = true;
+        if (WatcherMutex) return;        
         if (isFileLocked(fName)) return;
+        WatcherMutex = true;
         try
         {                        
             Image img = Image.FromFile(fName);
@@ -384,7 +397,11 @@ class FileIO
                 //Save image:
                 newImg.Save(fName, myImageCodecInfo, myEncoderParameters);
             }
-            newImg.Dispose();            
+            newImg.Dispose();
+        } 
+        catch (Exception e)
+        {
+            MessageBox.Show("Couldn't handle the file path passed by watcher. \n Exception: " + e.Message);
         }
         finally
         {
@@ -420,7 +437,6 @@ class FileIO
         updateConfigFile(calSetName);
         initializeTurretObjectiveRelayLUT();
     }
-
     public static void updateConfigFile(String newSetName)
     {
         String configPath = calPath + CONFIG;

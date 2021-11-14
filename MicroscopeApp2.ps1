@@ -13,7 +13,7 @@ $localWatcherDir = "C:\Users\P00ko\source\repos\WindowsFormsApp1\"
 $watchercmd = $localWatcherDir + "WindowsFormsApp1\bin\Release\WindowsFormsApp1.exe"
 $batPath = $localWatcherDir + "Test1.bat"
 $micAppExe = $micAppName + ".exe"
-$micAppCmdPath = $micAppPath + $micAppCmd
+$micAppCmdPath = $micAppPath + $micAppExe
 
 
 #1) Check that AmScope isn't running:
@@ -32,14 +32,14 @@ if($procTest){
 Set-Location -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options'
 
 # Remove the key
-Remove-Item -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\'$micAppCmd -Force -Verbose
+Remove-Item -Path "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\$micAppExe" -Force -Verbose
 
 # Start Microscope app process
-$micApp= Start-Process $micAppPath -PassThru
+$micApp= Start-Process $micAppCmdPath -PassThru
 
 # Restore the RegKey
-Get-Item -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options' | New-Item -Name $micAppCmd -Force
-New-ItemProperty -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\'$micAppCmd -Name 'Debugger' -Value $batPath -PropertyType String -Force
+Get-Item -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options' | New-Item -Name $micAppExe -Force
+New-ItemProperty -Path "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\$micAppExe" -Name 'Debugger' -Value $batPath -PropertyType String -Force
 
 #Start process/turret watcher application:
 $ID=$micApp.Id

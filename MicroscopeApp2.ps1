@@ -1,32 +1,50 @@
-﻿#1) Check that AmScope isn't running:
-Set-ExecutionPolicy unrestricted
+﻿Set-ExecutionPolicy unrestricted
 Add-Type -AssemblyName System.Windows.Forms
-$procTest = Get-Process -Name amscope -ErrorAction SilentlyContinue
+
+#CHANGE THESE 3 LINES FOR EACH INSTALL:
+# -- Variables to set at install: Microscope Application name, Path to executable, Path to the Watcher's directory -- 
+
+$micAppName = "amscope"
+$micAppPath = "C:\Program Files\AmScope\AmScope\x64\"
+$localWatcherDir = "C:\Users\P00ko\source\repos\WindowsFormsApp1\"
+
+# -------------------------------------------------------
+
+$watchercmd = $localWatcherDir + "WindowsFormsApp1\bin\Release\WindowsFormsApp1.exe"
+$batPath = $localWatcherDir + "Test1.bat"
+$micAppExe = $micAppName + ".exe"
+$micAppCmdPath = $micAppPath + $micAppCmd
+
+
+#1) Check that AmScope isn't running:
+$procTest = Get-Process -Name $micAppName -ErrorAction SilentlyContinue
 if($procTest){
     Write-Output Fizzle snaps! 
     [System.Windows.Forms.MessageBox]::Show('Hmmmm... Looks like you already have a microscope application already running. Please close it and try again', 
-    'TechInsights MicroscopseApp', 
+    'TurretMicroscopeWatcherApp',
     [System.Windows.Forms.MessageBoxButtons]::OK,
     [System.Windows.Forms.MessageBoxIcon]::Information)
     exit
 }
 
-#2) Start the microscope program and restore the reg key to 
+#2) Start the microscope program:
 # Set the location to the registry
 Set-Location -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options'
 
 # Remove the key
-Remove-Item -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\amscope.exe' -Force -Verbose
+Remove-Item -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\'$micAppCmd -Force -Verbose
 
 # Start Microscope app process
-$micApp= Start-Process "C:\Program Files\AmScope\AmScope\x64\amscope.exe" -PassThru
+$micApp= Start-Process $micAppPath -PassThru
 
-# Restore the Key
-Get-Item -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options' | New-Item -Name 'amscope.exe' -Force
-New-ItemProperty -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\amscope.exe' -Name 'Debugger' -Value "C:\Users\P00ko\source\repos\WindowsFormsApp1\test1.bat" -PropertyType String -Force
+# Restore the RegKey
+Get-Item -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options' | New-Item -Name $micAppCmd -Force
+New-ItemProperty -Path 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\'$micAppCmd -Name 'Debugger' -Value $batPath -PropertyType String -Force
 
+#Start process/turret watcher application:
 $ID=$micApp.Id
-$client = Start-Process "C:\Users\P00ko\source\repos\WindowsFormsApp1\WindowsFormsApp1\bin\Release\WindowsFormsApp1.exe" -ArgumentList "$ID" -PassThru
+$client = Start-Process $watchercmd -ArgumentList "$ID" -PassThru
 
+#Kill watcher when user quits microscope application
 $micApp.WaitForExit()
 Stop-Process($client.Id)

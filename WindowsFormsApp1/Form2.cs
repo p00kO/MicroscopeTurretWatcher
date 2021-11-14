@@ -24,8 +24,19 @@ namespace WindowsFormsApp1
         {
             if (calibrationValueshanged)
             {
-                updateXMLCalibrationFile();
-                calibrationValueshanged = false;
+                DialogResult dialogResult = MessageBox.Show("You are about to change the calibration file for this microscope. This change will be applied to all future files. Reverts can only be done manually. \n Are you sure you want to change the calibration file?",
+                                                             "Update Calibration file ?",
+                                                             MessageBoxButtons.YesNo);
+                if (dialogResult == DialogResult.Yes)
+                {
+                    updateXMLCalibrationFile();
+                    calibrationValueshanged = false;
+                    label3.Text = "Calibration data updated to a new .xml calibration file...";
+                }
+            }
+            else
+            {
+                label3.Text = "Nothing to update...";
             }
         }
         private void button2_Click(object sender, EventArgs e)
@@ -36,16 +47,19 @@ namespace WindowsFormsApp1
         {
             if (this.calibrationValueshanged)
             {
-                DialogResult dialogResult = MessageBox.Show("You made some changes to the Microscope calibrations. Do you want to save them ?", 
-                                                             "Save Changes ?", 
+                DialogResult dialogResult = MessageBox.Show("You made some changes to the Microscope calibrations but did not Update. \n Do you want to continue editing ?", 
+                                                             "Continue Editing ?", 
                                                              MessageBoxButtons.YesNo);
-                if (dialogResult == DialogResult.Yes)
+                if (dialogResult == DialogResult.No)
                 {
-                    updateXMLCalibrationFile();
-                }                               
-                this.calibrationValueshanged = false;
+                    this.calibrationValueshanged = false;
+                }
+                else
+                {
+                    return;
+                }
             }
-            Close();
+            Close();            
         }
         private void dataGridView1_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {

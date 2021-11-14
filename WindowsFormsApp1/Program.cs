@@ -147,27 +147,31 @@ class Turret
 
     private void SetComPort()
     {
+        portFound = false;
         try
         {
-            string[] ports = SerialPort.GetPortNames();
-            if (ports.Length == 1)
-            {
-                currentPort = new SerialPort(ports[0], 9600);
-                portFound = true;
-            }
-            else if (ports.Length > 1)
-            {
+           string[] ports = SerialPort.GetPortNames();
+           if (ports.Length > 0)
+           {
+                // Arduino:
                 String pId = "2341";
                 String vId = "0043";
+                // Arduino Nanao:
+/*                String pId = "1A86";
+                String vId = "7523";*/
                 ManagementObjectSearcher searcher =
-                new ManagementObjectSearcher(@"\\localhost\root\CIMV2", "SELECT * FROM Win32_PnPEntity WHERE ConfigManagerErrorCode = 0");
+                                new ManagementObjectSearcher(
+                                    @"\\localhost\root\CIMV2", 
+                                    "SELECT * FROM Win32_PnPEntity WHERE ConfigManagerErrorCode = 0"
+                                );
                 foreach (ManagementObject queryObj in searcher.Get())
                 {
                     String s = queryObj["DeviceID"].ToString();
                     if (s.Contains(pId) && s.Contains(vId))
                     {
+                        
                         for (int i = 0; i < ports.Length; i++)
-                        {
+                        {                            
                             if (queryObj["Name"].ToString().Contains(ports[i]))
                             {
                                 currentPort = new SerialPort(ports[i], 9600);
@@ -175,14 +179,14 @@ class Turret
                             }
                         }
                     }
-                }
+                } 
             }
             else
             {
-                MessageBox.Show(" Sorry, I couldn't find the turret watched port.\n");
+                MessageBox.Show(" Sorry, I couldn't find the turret watcher port.\n");
                 portFound = false;
                 ProcessWatcher.killCameraApp();
-                System.Environment.Exit(0);                
+                System.Environment.Exit(0);
             }
         }
         catch (Exception e)
